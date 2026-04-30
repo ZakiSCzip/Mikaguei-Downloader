@@ -86,7 +86,7 @@ jobs:
           path: |
             dist/MikagueiDownloader.exe
             dist/MikagueiDownloader.exe.sha256
-            dist/MikagueiDownloader.exe.sigstore
+            dist/MikagueiDownloader.exe.sigstore.json
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -111,7 +111,7 @@ jobs:
             pip install sigstore
             python -m sigstore verify github \
               --cert-identity 'https://github.com/${{ github.repository }}/.github/workflows/release.yml@${{ github.ref }}' \
-              --bundle MikagueiDownloader.exe.sigstore \
+              --bundle MikagueiDownloader.exe.sigstore.json \
               MikagueiDownloader.exe
             ```
 
@@ -122,4 +122,4 @@ jobs:
           files: |
             dist/MikagueiDownloader.exe
             dist/MikagueiDownloader.exe.sha256
-            dist/MikagueiDownloader.exe.sigstore
+            dist/MikagueiDownloader.exe.sigstore.json

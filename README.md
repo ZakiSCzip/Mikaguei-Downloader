@@ -30,7 +30,7 @@ Pega o `.exe` mais recente em [Releases](../../releases). Cada release tem 3 arq
 
 - **`MikagueiDownloader.exe`** — o executável (~140 MB)
 - **`MikagueiDownloader.exe.sha256`** — hash do `.exe` em texto puro
-- **`MikagueiDownloader.exe.sigstore`** — assinatura Sigstore (keyless OIDC) emitida pelo CI do GitHub Actions desse repo
+- **`MikagueiDownloader.exe.sigstore.json`** — assinatura Sigstore (keyless OIDC) emitida pelo CI do GitHub Actions desse repo
 
 ## Verificar o binário antes de rodar
 
@@ -52,12 +52,12 @@ Sigstore usa **keyless OIDC**: durante o build, o GitHub Actions assina o `.exe`
 pip install sigstore
 
 python -m sigstore verify github \
-  --cert-identity "https://github.com/ZakiSCzip/Mikaguei-Downloader/.github/workflows/release.yml@refs/tags/v1.6.1" \
-  --bundle MikagueiDownloader.exe.sigstore \
+  --cert-identity "https://github.com/ZakiSCzip/Mikaguei-Downloader/.github/workflows/release.yml@refs/tags/v1.6.2" \
+  --bundle MikagueiDownloader.exe.sigstore.json \
   MikagueiDownloader.exe
 ```
 
-Saída esperada: `OK: MikagueiDownloader.exe`. Troca `v1.6.1` pela tag que baixou.
+Saída esperada: `OK: MikagueiDownloader.exe`. Troca `v1.6.2` pela tag que baixou.
 
 ### 3. SHA256 mostrado pelo próprio app
 
