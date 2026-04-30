@@ -1,12 +1,16 @@
 """
-Easy Downloader (yt-dlp) — Tkinter GUI
+Mikaguei-Downloader (Baseado no YT-DLP) PY
 
-Features:
-- Paste URL + click "Carregar" to fetch metadata via yt-dlp.
-- Single video: shows big thumbnail, title, channel, duration.
-- Playlist: shows scrollable list with checkbox + miniature thumbnail per entry,
-  user picks which ones to download.
-- Format selector applies to whatever is selected; bundled ffmpeg is used.
+Recursos:
+- Cole a URL e clique em "Carregar" para obter os metadados via yt-dlp.
+
+- Vídeo individual: exibe uma miniatura grande, título, canal e duração.
+
+- Lista de reprodução: exibe uma lista rolável com caixas de seleção e miniaturas para cada item.
+
+O usuário escolhe quais vídeos baixar.
+
+- O seletor de formato se aplica ao formato selecionado; o ffmpeg incluído é utilizado.
 """
 from __future__ import annotations
 
