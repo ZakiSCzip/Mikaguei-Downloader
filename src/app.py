@@ -44,7 +44,7 @@ except Exception:  # noqa: BLE001
     REQ_OK = False
 
 APP_TITLE = "Mikaguei Downloader"
-APP_VERSION = "1.6.1"
+APP_VERSION = "1.6.2"
 
 
 # ---------- helpers ----------
