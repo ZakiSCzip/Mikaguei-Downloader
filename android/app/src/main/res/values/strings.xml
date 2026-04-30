@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mikaguei Downloader</string>
+    <string name="paste_url">Cole o link do vídeo</string>
+    <string name="fetch_info">Buscar formatos</string>
+    <string name="download">Baixar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="settings">Configurações</string>
+    <string name="simple_mode">Modo simples (celular fraco)</string>
+    <string name="simple_mode_desc">Desliga animações, blur e cores dinâmicas. Ative em celulares com pouca RAM ou GPU fraca.</string>
+    <string name="dynamic_color">Cores dinâmicas (Material You)</string>
+    <string name="dynamic_color_desc">Usa as cores do papel de parede do sistema. Android 12+.</string>
+    <string name="dest_label">Destino</string>
+    <string name="dest_local">Só baixar (celular)</string>
+    <string name="dest_ia">Baixar + enviar pro archive.org</string>
+    <string name="dest_ia_delete">Baixar + IA + apagar local</string>
+    <string name="ia_keys">Internet Archive</string>
+    <string name="ia_access">Access key</string>
+    <string name="ia_secret">Secret key</string>
+    <string name="ia_collection">Coleção</string>
+    <string name="ia_creator">Creator (vazio = canal)</string>
+    <string name="forget_keys">Esquecer keys</string>
+    <string name="format_best">Melhor (vídeo + áudio)</string>
+    <string name="format_720">Melhor ≤ 720p (mobile-friendly)</string>
+    <string name="format_audio">Só áudio (M4A)</string>
+    <string name="empty_log">Cole um link e toque em Baixar.</string>
+    <string name="downloads_folder">Salvando em: Download/MikagueiDownloader/</string>
+</resources>

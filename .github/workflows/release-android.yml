@@ -1,0 +1,151 @@
+name: Build & Release Android APK
+
+on:
+  push:
+    tags:
+      - 'android-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write   # required for sigstore keyless OIDC signing
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Decode keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > mikaguei-release.jks
+          ls -la mikaguei-release.jks
+
+      - name: Write keystore.properties
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          cat > keystore.properties << EOF
+          storeFile=mikaguei-release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Gradle assemble release
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APKs
+        id: rename
+        run: |
+          cd app/build/outputs/apk/release
+          ls -la
+          mv app-arm64-v8a-release.apk MikagueiDownloader-arm64-v8a.apk
+          mv app-armeabi-v7a-release.apk MikagueiDownloader-armeabi-v7a.apk
+          mv app-universal-release.apk MikagueiDownloader-universal.apk
+          ls -la
+          # Compute SHA256
+          for f in MikagueiDownloader-*.apk; do
+            sha=$(sha256sum "$f" | awk '{print $1}')
+            echo "$sha  $f" > "$f.sha256"
+            echo "${f%.apk}_sha256=$sha" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Sign APKs with Sigstore (keyless OIDC)
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: |
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MikagueiDownloader-${{ github.ref_name }}
+          path: |
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk.sigstore.json
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk.sigstore.json
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk.sigstore.json
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/android-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mikaguei Downloader Android ${{ github.ref_name }}
+          body: |
+            ## Mikaguei Downloader Android ${{ github.ref_name }}
+
+            Build automatizado de [`${{ github.sha }}`](../../commit/${{ github.sha }}) — APK para Android 10+.
+
+            ### Qual baixar
+            - **`MikagueiDownloader-arm64-v8a.apk`** — celulares modernos (64 bits, recomendado pra 99% dos casos)
+            - **`MikagueiDownloader-armeabi-v7a.apk`** — celulares antigos (32 bits)
+            - **`MikagueiDownloader-universal.apk`** — funciona em qualquer Android (maior, ~110 MB)
+
+            ### SHA256
+            ```
+            arm64-v8a:    ${{ steps.rename.outputs.MikagueiDownloader-arm64-v8a_sha256 }}
+            armeabi-v7a:  ${{ steps.rename.outputs.MikagueiDownloader-armeabi-v7a_sha256 }}
+            universal:    ${{ steps.rename.outputs.MikagueiDownloader-universal_sha256 }}
+            ```
+
+            ### Verificar Sigstore
+            ```bash
+            pip install sigstore
+            python -m sigstore verify github \
+              --cert-identity 'https://github.com/${{ github.repository }}/.github/workflows/release-android.yml@${{ github.ref }}' \
+              --bundle MikagueiDownloader-arm64-v8a.apk.sigstore.json \
+              MikagueiDownloader-arm64-v8a.apk
+            ```
+
+            ### Componentes embutidos
+            - Python 3 + yt-dlp (via [`youtubedl-android`](https://github.com/yausername/youtubedl-android) 0.17.4)
+            - FFmpeg
+            - aria2c
+
+            ### Como instalar
+            1. Baixa o APK que combina com seu celular
+            2. Permita "Instalar de fontes desconhecidas" no Android (Settings → Apps → Permissões especiais)
+            3. Abre o APK pelo gerenciador de arquivos
+            4. Pode dar aviso "App não verificado" — clique em "Instalar mesmo assim"
+
+            ### Permissões usadas
+            - **Internet** — pra baixar do YouTube e enviar pro archive.org
+            - **Notificações** — progresso do download
+            - **Storage (Android 10)** — salvar em `/Download/MikagueiDownloader/`
+          files: |
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk.sha256
+            android/app/build/outputs/apk/release/MikagueiDownloader-arm64-v8a.apk.sigstore.json
+            android/app/build/outputs/apk/release/MikagueiDownloader-armeabi-v7a.apk.sigstore.json
+            android/app/build/outputs/apk/release/MikagueiDownloader-universal.apk.sigstore.json
