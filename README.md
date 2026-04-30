@@ -26,11 +26,51 @@ GUI Windows (single-file `.exe`) que envolve **yt-dlp** + **ffmpeg** + **deno** 
 
 ## Download
 
-Pega o `.exe` mais recente em [Releases](../../releases). O hash SHA256 fica no nome `MikagueiDownloader.exe.sha256` ao lado do executável — confere antes de rodar:
+Pega o `.exe` mais recente em [Releases](../../releases). Cada release tem 3 arquivos:
+
+- **`MikagueiDownloader.exe`** — o executável (~140 MB)
+- **`MikagueiDownloader.exe.sha256`** — hash do `.exe` em texto puro
+- **`MikagueiDownloader.exe.sigstore`** — assinatura Sigstore (keyless OIDC) emitida pelo CI do GitHub Actions desse repo
+
+## Verificar o binário antes de rodar
+
+> O `.exe` **não é assinado por uma CA tradicional** (code signing certificate custa US$200-700/ano e a maioria de projetos open source pequenos não tem). Em vez disso, ofereço duas formas de verificar criptograficamente que o arquivo é genuíno.
+
+### 1. SHA256 (rápido — confirma que o arquivo não foi modificado)
 
 ```cmd
 certutil -hashfile MikagueiDownloader.exe SHA256
 ```
+
+Compara com o conteúdo do arquivo `.sha256` baixado da release. Se baterem, o `.exe` é byte-a-byte idêntico ao publicado.
+
+### 2. Sigstore (forte — confirma que o `.exe` saiu desse repo + dessa tag rodando no CI)
+
+Sigstore usa **keyless OIDC**: durante o build, o GitHub Actions assina o `.exe` provando que veio especificamente do workflow `release.yml` desse repo numa tag específica. Não dá pra falsificar mesmo se alguém invadir minha conta — só com acesso ao token efêmero do CI no momento exato do build.
+
+```bash
+pip install sigstore
+
+python -m sigstore verify github \
+  --cert-identity "https://github.com/ZakiSCzip/Mikaguei-Downloader/.github/workflows/release.yml@refs/tags/v1.6.1" \
+  --bundle MikagueiDownloader.exe.sigstore \
+  MikagueiDownloader.exe
+```
+
+Saída esperada: `OK: MikagueiDownloader.exe`. Troca `v1.6.1` pela tag que baixou.
+
+### 3. SHA256 mostrado pelo próprio app
+
+Ao iniciar, o app calcula o próprio SHA256 e imprime no log (`[info] SHA256 do .exe: <hex>`). Compara com o `.sha256` do GitHub. Se baterem, o que está rodando na sua máquina é exatamente o que o CI gerou.
+
+## SmartScreen / Antivírus
+
+Como o `.exe` não tem code signing certificate tradicional, o Windows pode mostrar o aviso **"O Windows protegeu o seu PC"** na primeira execução. Faz assim:
+
+1. Verifica o SHA256 (passo 1 acima) — se bater com o publicado, o arquivo é o oficial
+2. Clica em **"Mais informações"** → **"Executar assim mesmo"**
+
+Se o antivírus marcar como ameaça, é falso-positivo comum em binários PyInstaller (yt-dlp.exe oficial e muitos outros sofrem do mesmo problema). Você pode adicionar à lista de exceções depois de verificar a assinatura Sigstore.
 
 ## Como usar
 
