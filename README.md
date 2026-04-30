@@ -1,8 +1,13 @@
 # Mikaguei Downloader
 
-GUI Windows (single-file `.exe`) que envolve **yt-dlp** + **ffmpeg** + **deno** com integração opcional pra subir os vídeos baixados pro **archive.org**.
+GUI Windows (`.exe`) **e app Android** (`.apk`) que envolvem **yt-dlp** + **ffmpeg** com integração opcional pra subir os vídeos baixados pro **archive.org**.
 
 ![Mikaguei Downloader](build/logo_square.png)
+
+## Plataformas
+
+- **Windows** — `.exe` single-file, releases com tag `v*` (ex: `v1.6.2`)
+- **Android 10+** — `.apk` arm64/arm32, releases com tag `android-v*` (ex: `android-v0.1.0`). Source em [`android/`](android/), build via Gradle, UI Kotlin + Jetpack Compose Material 3 com toggle "modo simples" pra celular fraco.
 
 ## Recursos
 

@@ -57,3 +57,17 @@ python-installer.exe
 
 # Source-only image (the cropped icon.ico/logo_square.png are tracked)
 build/logo.png
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+android/keystore.properties
+android/*.jks
+android/*.keystore
+*.iml
+android/captures/
+android/app/release/
+
