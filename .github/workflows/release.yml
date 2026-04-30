@@ -1,0 +1,108 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller==6.6.0
+
+      - name: Download yt-dlp
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          $url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+          Invoke-WebRequest -Uri $url -OutFile bin\yt-dlp.exe
+          Get-FileHash bin\yt-dlp.exe -Algorithm SHA256
+
+      - name: Download ffmpeg + ffprobe (gyan essentials)
+        shell: pwsh
+        run: |
+          $zip = "ffmpeg-release-essentials.zip"
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath ffmpeg_extract -Force
+          $exe = Get-ChildItem -Path ffmpeg_extract -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          $probe = Get-ChildItem -Path ffmpeg_extract -Recurse -Filter ffprobe.exe | Select-Object -First 1
+          Copy-Item $exe.FullName bin\ffmpeg.exe
+          Copy-Item $probe.FullName bin\ffprobe.exe
+          Remove-Item -Recurse -Force ffmpeg_extract, $zip
+          Get-FileHash bin\ffmpeg.exe -Algorithm SHA256
+          Get-FileHash bin\ffprobe.exe -Algorithm SHA256
+
+      - name: Download Deno
+        shell: pwsh
+        run: |
+          $zip = "deno.zip"
+          Invoke-WebRequest -Uri "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath deno_extract -Force
+          Copy-Item deno_extract\deno.exe bin\deno.exe
+          Remove-Item -Recurse -Force deno_extract, $zip
+          Get-FileHash bin\deno.exe -Algorithm SHA256
+
+      - name: PyInstaller build
+        shell: pwsh
+        run: |
+          pyinstaller --clean -y --distpath .\dist --workpath .\build\work build\mikaguei_downloader.spec
+
+      - name: Compute SHA256 of .exe
+        id: sha
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash dist\MikagueiDownloader.exe -Algorithm SHA256).Hash.ToLower()
+          Write-Host "SHA256=$hash"
+          "$hash  MikagueiDownloader.exe" | Out-File -FilePath dist\MikagueiDownloader.exe.sha256 -Encoding ascii -NoNewline
+          "sha256=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MikagueiDownloader-${{ github.ref_name }}
+          path: |
+            dist/MikagueiDownloader.exe
+            dist/MikagueiDownloader.exe.sha256
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mikaguei Downloader ${{ github.ref_name }}
+          body: |
+            ## Mikaguei Downloader ${{ github.ref_name }}
+
+            Build automatizado de [`${{ github.sha }}`](../../commit/${{ github.sha }}).
+
+            ### SHA256
+            `${{ steps.sha.outputs.sha256 }}`
+
+            Verifica no Windows com:
+            ```cmd
+            certutil -hashfile MikagueiDownloader.exe SHA256
+            ```
+
+            ### Componentes embutidos
+            - yt-dlp.exe (latest do `yt-dlp/yt-dlp`)
+            - ffmpeg.exe + ffprobe.exe (gyan essentials build)
+            - deno.exe (latest do `denoland/deno`)
+          files: |
+            dist/MikagueiDownloader.exe
+            dist/MikagueiDownloader.exe.sha256

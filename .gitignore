@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# PyInstaller
+dist/
+build/work/
+*.toc
+*.pkg
+warn-*.txt
+xref-*.html
+*.manifest
+
+# External binaries (downloaded by CI on build)
+bin/yt-dlp.exe
+bin/yt-dlp
+bin/ffmpeg.exe
+bin/ffmpeg
+bin/ffprobe.exe
+bin/ffprobe
+bin/deno.exe
+bin/deno
+
+# Local app data / runtime
+*.log
+config.json
+*.cookies.txt
+cookies.txt
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Environment
+.env
+.env.local
+
+# Build helpers
+*.zip
+python-installer.exe
+
+# Source-only image (the cropped icon.ico/logo_square.png are tracked)
+build/logo.png
